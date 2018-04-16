@@ -89,6 +89,8 @@ public class AvroComponent extends DefaultComponent {
 
     protected AvroSchemaStoreService schemaStoreService;
 
+    protected AvroDataFactoryService dataFactoryService;
+
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getAdapter(Class<T> adapter) {
@@ -96,6 +98,8 @@ public class AvroComponent extends DefaultComponent {
             return (T) schemaStoreService;
         } else if (adapter.isAssignableFrom(schemaFactoryService.getClass())) {
             return (T) schemaFactoryService;
+        } else if (adapter.isAssignableFrom(dataFactoryService.getClass())) {
+            return (T) dataFactoryService;
         }
         return null;
     }
@@ -117,12 +121,14 @@ public class AvroComponent extends DefaultComponent {
     public void start(ComponentContext context) {
         buildSchemaFactoryService();
         buildSchemaStoreService(context);
+        dataFactoryService = new AvroDataFactoryServiceImpl();
     }
 
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
         schemaFactoryService = null;
         schemaStoreService = null;
+        dataFactoryService = null;
     }
 
     @Override

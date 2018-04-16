@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -53,7 +54,7 @@ public class AvroSchemaFactoryContext {
         }
     };
 
-    protected Collection<AvroReplacementDescriptor> replacements;
+    protected List<AvroReplacementDescriptor> replacements;
 
     protected Map<Class<?>, AvroSchemaFactory<?>> factories = new HashMap<>();
 
@@ -73,6 +74,16 @@ public class AvroSchemaFactoryContext {
         String output = input;
         for (AvroReplacementDescriptor replacement : replacements) {
             output = output.replaceAll(replacement.getForbidden(), replacement.getReplacement());
+        }
+        return output;
+    }
+
+    public String restoreForbidden(String input) {
+        String output = input;
+        ListIterator<AvroReplacementDescriptor> it = replacements.listIterator(replacements.size());
+        while (it.hasPrevious()) {
+            AvroReplacementDescriptor replacement = it.previous();
+            output = output.replaceAll(replacement.getReplacement(), replacement.getForbidden());
         }
         return output;
     }

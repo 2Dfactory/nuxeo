@@ -13,6 +13,7 @@
 
   <service>
     <provide interface="org.apache.avro.message.SchemaStore" />
+    <provide interface="org.nuxeo.runtime.avro.AvroDataFactoryService" />
     <provide interface="org.nuxeo.runtime.avro.AvroSchemaStoreService" />
     <provide interface="org.nuxeo.runtime.avro.AvroSchemaFactoryService" />
   </service>

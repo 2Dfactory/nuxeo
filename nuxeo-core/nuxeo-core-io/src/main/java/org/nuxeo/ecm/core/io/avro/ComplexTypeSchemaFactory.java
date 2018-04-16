@@ -19,6 +19,7 @@
 package org.nuxeo.ecm.core.io.avro;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.avro.Schema;
@@ -32,20 +33,26 @@ import org.nuxeo.runtime.avro.AvroSchemaFactoryContext;
  */
 public class ComplexTypeSchemaFactory extends AvroSchemaFactory<ComplexType> {
 
-    protected ComplexTypeSchemaFactory(AvroSchemaFactoryContext context) {
+    protected static final Schema NULL_SCHEMA = Schema.create(Schema.Type.NULL);
+
+    public ComplexTypeSchemaFactory(AvroSchemaFactoryContext context) {
         super(context);
     }
 
     @Override
     public Schema createSchema(ComplexType input) {
-        Schema typeSchema = Schema.createRecord(getName(input), null, input.getNamespace().prefix, false);
+        Schema schema = Schema.createRecord(getName(input), null, input.getNamespace().prefix, false);
         List<Field> fields = new ArrayList<>(input.getFields().size());
         for (org.nuxeo.ecm.core.schema.types.Field f : context.sort(input.getFields())) {
             String fieldName = context.replaceForbidden(f.getName().getLocalName());
-            fields.add(new Field(fieldName, context.createSchema(f.getType()), null, (Object) null));
+            Schema fieldSchema = context.createSchema(f.getType());
+            if (f.isNillable()) {
+                fieldSchema = Schema.createUnion(Arrays.asList(NULL_SCHEMA, fieldSchema));
+            }
+            fields.add(new Field(fieldName, fieldSchema, null, (Object) null));
         }
-        typeSchema.setFields(fields);
-        return typeSchema;
+        schema.setFields(fields);
+        return schema;
     }
 
     @Override
