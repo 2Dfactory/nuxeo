@@ -32,22 +32,15 @@ import org.nuxeo.ecm.core.api.model.impl.ListProperty;
 import org.nuxeo.ecm.core.schema.types.ListType;
 import org.nuxeo.runtime.RuntimeServiceException;
 import org.nuxeo.runtime.avro.AvroDataFactory;
-import org.nuxeo.runtime.avro.AvroDataFactoryService;
-import org.nuxeo.runtime.avro.AvroSchemaFactoryContext;
+import org.nuxeo.runtime.avro.AvroService;
 
 /**
  * @since 10.2
  */
 public class PropertyDataFactory extends AvroDataFactory<Property> {
 
-    protected AvroDataFactoryService service;
-
-    protected AvroSchemaFactoryContext context;
-
-    public PropertyDataFactory(AvroDataFactoryService service, AvroSchemaFactoryContext context) {
-        super();
-        this.service = service;
-        this.context = context;
+    public PropertyDataFactory(AvroService service) {
+        super(service);
     }
 
     @Override
@@ -66,7 +59,7 @@ public class PropertyDataFactory extends AvroDataFactory<Property> {
             if (input.isComplex()) {
                 GenericRecord record = new GenericData.Record(schema);
                 for (Field f : schema.getFields()) {
-                    record.put(f.name(), service.createData(f.schema(), input.get(context.restoreForbidden(f.name()))));
+                    record.put(f.name(), service.createData(f.schema(), input.get(service.decodeName(f.name()))));
                 }
                 return record;
             }

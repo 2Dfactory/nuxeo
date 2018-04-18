@@ -49,7 +49,7 @@ public class DocumentTypeSchemaFactory extends AvroSchemaFactory<DocumentType> {
 
     @Override
     public String getName(DocumentType input) {
-        return context.replaceForbidden(input.getName());
+        return context.getService().encodeName(input.getName());
     }
 
 }

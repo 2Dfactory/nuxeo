@@ -32,7 +32,7 @@ import org.apache.avro.message.SchemaStore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.avro.AvroSchemaStoreService;
+import org.nuxeo.runtime.avro.AvroService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -48,7 +48,7 @@ import org.nuxeo.runtime.test.runner.RuntimeFeature;
 public class TestAvroSchemaStoreService {
 
     @Inject
-    public AvroSchemaStoreService service;
+    public AvroService service;
 
     @Test
     public void testSchemaStoreRetrieval() {

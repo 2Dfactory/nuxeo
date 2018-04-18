@@ -27,22 +27,15 @@ import org.apache.avro.generic.GenericRecord;
 import org.nuxeo.ecm.core.api.model.impl.primitives.BlobProperty;
 import org.nuxeo.runtime.RuntimeServiceException;
 import org.nuxeo.runtime.avro.AvroDataFactory;
-import org.nuxeo.runtime.avro.AvroDataFactoryService;
-import org.nuxeo.runtime.avro.AvroSchemaFactoryContext;
+import org.nuxeo.runtime.avro.AvroService;
 
 /**
  * @since 10.2
  */
 public class BlobPropertyDataFactory extends AvroDataFactory<BlobProperty> {
 
-    protected AvroDataFactoryService service;
-
-    protected AvroSchemaFactoryContext context;
-
-    public BlobPropertyDataFactory(AvroDataFactoryService service, AvroSchemaFactoryContext context) {
-        super();
-        this.service = service;
-        this.context = context;
+    public BlobPropertyDataFactory(AvroService service) {
+        super(service);
     }
 
     @Override
@@ -68,7 +61,7 @@ public class BlobPropertyDataFactory extends AvroDataFactory<BlobProperty> {
                 if ("data".equals(f.name())) {
                     record.put(f.name(), ByteBuffer.wrap("data".getBytes()));
                 } else {
-                    record.put(f.name(), service.createData(f.schema(), input.get(context.restoreForbidden(f.name()))));
+                    record.put(f.name(), service.createData(f.schema(), input.get(service.decodeName(f.name()))));
                 }
                 input.getValueForWrite();
             }

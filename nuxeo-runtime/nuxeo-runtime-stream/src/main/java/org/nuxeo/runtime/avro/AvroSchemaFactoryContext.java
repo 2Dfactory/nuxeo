@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -54,38 +53,24 @@ public class AvroSchemaFactoryContext {
         }
     };
 
-    protected List<AvroReplacementDescriptor> replacements;
-
     protected Map<Class<?>, AvroSchemaFactory<?>> factories = new HashMap<>();
 
     protected Map<String, Schema> createdSchemas = new HashMap<>();
 
-    protected AvroSchemaFactoryContext(Collection<AvroReplacementDescriptor> replacements) {
+    protected final AvroService service;
+
+    protected AvroSchemaFactoryContext(AvroService service) {
         super();
-        this.replacements = new ArrayList<>(replacements);
+        this.service = service;
+    }
+
+    public AvroService getService() {
+        return service;
     }
 
     public <T> Schema createSchema(T input) {
         String qualifiedName = getFactory(input).getQualifiedName(input);
         return createdSchemas.computeIfAbsent(qualifiedName, k -> getFactory(input).createSchema(input));
-    }
-
-    public String replaceForbidden(String input) {
-        String output = input;
-        for (AvroReplacementDescriptor replacement : replacements) {
-            output = output.replaceAll(replacement.getForbidden(), replacement.getReplacement());
-        }
-        return output;
-    }
-
-    public String restoreForbidden(String input) {
-        String output = input;
-        ListIterator<AvroReplacementDescriptor> it = replacements.listIterator(replacements.size());
-        while (it.hasPrevious()) {
-            AvroReplacementDescriptor replacement = it.previous();
-            output = output.replaceAll(replacement.getReplacement(), replacement.getForbidden());
-        }
-        return output;
     }
 
     public <U> List<U> sort(Collection<U> children) {

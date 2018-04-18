@@ -46,7 +46,7 @@ public class DocumentModelSchemaFactory extends AvroSchemaFactory<DocumentModel>
 
     @Override
     public String getName(DocumentModel input) {
-        return context.replaceForbidden(input.getName());
+        return context.getService().encodeName(input.getName());
     }
 
 }

@@ -26,22 +26,15 @@ import org.apache.avro.generic.GenericRecord;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.runtime.avro.AvroDataFactory;
-import org.nuxeo.runtime.avro.AvroDataFactoryService;
-import org.nuxeo.runtime.avro.AvroSchemaFactoryContext;
+import org.nuxeo.runtime.avro.AvroService;
 
 /**
- * @since TODO
+ * @since 10.2
  */
 public class DocumentModelDataFactory extends AvroDataFactory<DocumentModel> {
 
-    protected AvroDataFactoryService service;
-
-    protected AvroSchemaFactoryContext context;
-
-    public DocumentModelDataFactory(AvroDataFactoryService service, AvroSchemaFactoryContext context) {
-        super();
-        this.service = service;
-        this.context = context;
+    public DocumentModelDataFactory(AvroService service) {
+        super(service);
     }
 
     @Override
@@ -52,7 +45,7 @@ public class DocumentModelDataFactory extends AvroDataFactory<DocumentModel> {
             if (field.schema().getType() == Type.RECORD && "schema".equals(logicalType)) {
                 record.put(field.name(), service.createData(field.schema(), input));
             } else {
-                Property p = input.getProperty(context.restoreForbidden(field.name()));
+                Property p = input.getProperty(service.decodeName(field.name()));
                 record.put(field.name(), service.createData(field.schema(), p));
             }
         }

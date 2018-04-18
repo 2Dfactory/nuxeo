@@ -38,9 +38,8 @@ import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.impl.primitives.BlobProperty;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
-import org.nuxeo.runtime.avro.AvroDataFactoryService;
-import org.nuxeo.runtime.avro.AvroSchemaFactoryContext;
-import org.nuxeo.runtime.avro.AvroSchemaFactoryService;
+import org.nuxeo.runtime.avro.AvroService;
+import org.nuxeo.runtime.avro.AvroServiceImpl;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -59,10 +58,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 public class TestAvroDataFactoryService {
 
     @Inject
-    public AvroSchemaFactoryService service;
-
-    @Inject
-    public AvroDataFactoryService dataService;
+    public AvroService service;
 
     @Inject
     public CoreSession session;
@@ -79,17 +75,17 @@ public class TestAvroDataFactoryService {
 
     protected void test(String documentPath) throws IOException {
 
-        AvroSchemaFactoryContext context = service.createContext();
-
-        dataService.register(Property.class, new PropertyDataFactory(dataService, context));
-        dataService.register(BlobProperty.class, new BlobPropertyDataFactory(dataService, context));
-        dataService.register(DocumentModel.class, new DocumentModelDataFactory(dataService, context));
+        // temp test part
+        ((AvroServiceImpl) service).register(Property.class, new PropertyDataFactory(service));
+        ((AvroServiceImpl) service).register(BlobProperty.class, new BlobPropertyDataFactory(service));
+        ((AvroServiceImpl) service).register(DocumentModel.class, new DocumentModelDataFactory(service));
+        // end temp test part
 
         DocumentModel doc = session.getDocument(new PathRef(documentPath));
         assertNotNull(doc);
-        Schema avro = context.createSchema(doc.getDocumentType());
+        Schema avro = service.createSchema(doc.getDocumentType());
         assertNotNull(avro);
-        Object data = dataService.createData(avro, doc);
+        Object data = service.createData(avro, doc);
 
         File file = File.createTempFile("tutu", "testAvro" + documentPath.replaceAll("/", ""));
 

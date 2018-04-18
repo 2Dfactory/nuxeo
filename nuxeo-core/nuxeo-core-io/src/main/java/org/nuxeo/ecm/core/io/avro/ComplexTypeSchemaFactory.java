@@ -44,7 +44,7 @@ public class ComplexTypeSchemaFactory extends AvroSchemaFactory<ComplexType> {
         Schema schema = Schema.createRecord(getName(input), null, input.getNamespace().prefix, false);
         List<Field> fields = new ArrayList<>(input.getFields().size());
         for (org.nuxeo.ecm.core.schema.types.Field f : context.sort(input.getFields())) {
-            String fieldName = context.replaceForbidden(f.getName().getLocalName());
+            String fieldName = context.getService().encodeName(f.getName().getLocalName());
             Schema fieldSchema = context.createSchema(f.getType());
             if (f.isNillable()) {
                 fieldSchema = Schema.createUnion(Arrays.asList(NULL_SCHEMA, fieldSchema));
@@ -57,12 +57,12 @@ public class ComplexTypeSchemaFactory extends AvroSchemaFactory<ComplexType> {
 
     @Override
     public String getName(ComplexType input) {
-        return context.replaceForbidden(input.getName());
+        return context.getService().encodeName(input.getName());
     }
 
     @Override
     public String getQualifiedName(ComplexType input) {
-        return context.replaceForbidden(input.getNamespace().prefix) + ":" + getName(input);
+        return context.getService().encodeName(input.getNamespace().prefix) + ":" + getName(input);
     }
 
 }

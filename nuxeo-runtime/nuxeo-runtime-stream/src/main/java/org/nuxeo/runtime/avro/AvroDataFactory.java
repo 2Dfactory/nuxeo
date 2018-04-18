@@ -27,6 +27,12 @@ import org.apache.avro.Schema;
  */
 public abstract class AvroDataFactory<T> {
 
+    protected final AvroService service;
+
+    protected AvroDataFactory(AvroService service) {
+        this.service = service;
+    }
+
     public abstract Object createData(Schema schema, T input);
 
 }

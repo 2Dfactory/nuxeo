@@ -20,7 +20,6 @@ package org.nuxeo.runtime.avro;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
@@ -39,6 +38,12 @@ import org.nuxeo.runtime.model.SimpleContributionRegistry;
  * @since 10.2
  */
 public class AvroComponent extends DefaultComponent {
+
+    public static final String SCHEMA_XP = "schema";
+
+    public static final String FACTORY_XP = "factory";
+
+    public static final String REPLACEMENT_XP = "replacement";
 
     protected static class AvroReplacementRegistry extends SimpleContributionRegistry<AvroReplacementDescriptor> {
         @Override
@@ -73,33 +78,19 @@ public class AvroComponent extends DefaultComponent {
         }
     }
 
-    public static final String SCHEMA_XP = "schema";
-
-    public static final String FACTORY_XP = "factory";
-
-    public static final String REPLACEMENT_XP = "replacement";
-
     protected final SchemaDescriptorRegistry schemaDescriptors = new SchemaDescriptorRegistry();
 
     protected final SchemaFactoryRegistry schemaFactoryDescriptors = new SchemaFactoryRegistry();
 
     protected final AvroReplacementRegistry replacementDescriptors = new AvroReplacementRegistry();
 
-    protected AvroSchemaFactoryService schemaFactoryService;
-
-    protected AvroSchemaStoreService schemaStoreService;
-
-    protected AvroDataFactoryService dataFactoryService;
+    protected AvroService avroService;
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getAdapter(Class<T> adapter) {
-        if (adapter.isAssignableFrom(schemaStoreService.getClass())) {
-            return (T) schemaStoreService;
-        } else if (adapter.isAssignableFrom(schemaFactoryService.getClass())) {
-            return (T) schemaFactoryService;
-        } else if (adapter.isAssignableFrom(dataFactoryService.getClass())) {
-            return (T) dataFactoryService;
+        if (adapter.isAssignableFrom(avroService.getClass())) {
+            return (T) avroService;
         }
         return null;
     }
@@ -118,17 +109,36 @@ public class AvroComponent extends DefaultComponent {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void start(ComponentContext context) {
-        buildSchemaFactoryService();
-        buildSchemaStoreService(context);
-        dataFactoryService = new AvroDataFactoryServiceImpl();
+        Collection<AvroSchemaFactoryDescriptor> descriptors = schemaFactoryDescriptors.getDescriptors();
+        Map<Class<?>, Class<AvroSchemaFactory<?>>> schemaFactories = new HashMap<>(descriptors.size());
+        for (AvroSchemaFactoryDescriptor d : descriptors) {
+            try {
+                Class<Object> type = (Class<Object>) Class.forName(d.type);
+                Class<AvroSchemaFactory<?>> factory = (Class<AvroSchemaFactory<?>>) Class.forName(d.clazz);
+                schemaFactories.put(type, factory);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeServiceException(e);
+            }
+        }
+        avroService = new AvroServiceImpl(replacementDescriptors.getDescriptors(), schemaFactories);
+        for (AvroSchemaDescriptor descriptor : schemaDescriptors.getDescriptors()) {
+            URL url = context.getRuntimeContext().getResource(descriptor.file);
+            try (InputStream stream = url == null ? null : url.openStream()) {
+                if (stream == null) {
+                    throw new RuntimeServiceException("Could not load stream for file " + descriptor.file);
+                }
+                avroService.addSchema(new Schema.Parser().parse(stream));
+            } catch (IOException e) {
+                throw new RuntimeServiceException(e);
+            }
+        }
     }
 
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
-        schemaFactoryService = null;
-        schemaStoreService = null;
-        dataFactoryService = null;
+        avroService = null;
     }
 
     @Override
@@ -141,45 +151,6 @@ public class AvroComponent extends DefaultComponent {
             replacementDescriptors.removeContribution((AvroReplacementDescriptor) contribution);
         } else {
             throw new RuntimeServiceException("Unknown extension point: " + extensionPoint);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    protected void buildSchemaFactoryService() {
-        Collection<AvroReplacementDescriptor> replacements = replacementDescriptors.getDescriptors();
-        Collection<AvroSchemaFactoryDescriptor> descriptors = schemaFactoryDescriptors.getDescriptors();
-        AvroSchemaFactoryServiceImpl schemaFactoryService = new AvroSchemaFactoryServiceImpl(replacements);
-        AvroSchemaFactoryContext avroContext = schemaFactoryService.createContext();
-        Map<Class<?>, Class<AvroSchemaFactory<?>>> factories = new HashMap<>(descriptors.size());
-        for (AvroSchemaFactoryDescriptor d : descriptors) {
-            try {
-                Class<Object> type = (Class<Object>) Class.forName(d.type);
-                Class<AvroSchemaFactory<?>> factory = (Class<AvroSchemaFactory<?>>) Class.forName(d.clazz);
-                // assert the class is instanciable
-                Constructor<AvroSchemaFactory<?>> constructor = factory.getConstructor(AvroSchemaFactoryContext.class);
-                constructor.newInstance(avroContext);
-                // add it to factories
-                factories.put(type, factory);
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeServiceException(e);
-            }
-        }
-        schemaFactoryService.setFactories(factories);
-        this.schemaFactoryService = schemaFactoryService;
-    }
-
-    protected void buildSchemaStoreService(ComponentContext context) {
-        schemaStoreService = new AvroSchemaStoreServiceImpl();
-        for (AvroSchemaDescriptor descriptor : schemaDescriptors.getDescriptors()) {
-            URL url = context.getRuntimeContext().getResource(descriptor.file);
-            try (InputStream stream = url == null ? null : url.openStream()) {
-                if (stream == null) {
-                    throw new RuntimeServiceException("Could not load stream for file " + descriptor.file);
-                }
-                schemaStoreService.addSchema(new Schema.Parser().parse(stream));
-            } catch (IOException e) {
-                throw new RuntimeServiceException(e);
-            }
         }
     }
 

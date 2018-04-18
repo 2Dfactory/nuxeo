@@ -79,7 +79,7 @@ public class TypeSchemaFactory extends AvroSchemaFactory<Type> {
 
     @Override
     public String getName(Type input) {
-        return context.replaceForbidden(input.getName());
+        return context.getService().encodeName(input.getName());
     }
 
 }
